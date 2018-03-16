@@ -257,33 +257,33 @@ def main():
     interp = nn.Upsample(size=input_size, mode='bilinear')
 
     for e in range(epochs):
-    for i_iter, batch in enumerate(trainloader):
-        images, labels, _, _ = batch
+        for i_iter, batch in enumerate(trainloader):
+            images, labels, _, _ = batch
 #        images = Variable(images).cuda(args.gpu)
-        images = Variable(images).cuda()
+            images = Variable(images).cuda()
 
-        optimizer.zero_grad()
-        adjust_learning_rate(optimizer, i_iter)
-        pred = interp(model(images))
+            optimizer.zero_grad()
+            adjust_learning_rate(optimizer, i_iter)
+            pred = interp(model(images))
 
-        if i_iter % 50 == 0:
-             vis.show(F.sigmoid(pred)[:,1].cpu().data.round().numpy()[0:],labels.numpy())
+            if i_iter % 50 == 0:
+                vis.show(F.sigmoid(pred)[:,1].cpu().data.round().numpy()[0:],labels.numpy())
 
-        loss = loss_calc(pred, labels.squeeze())
+                loss = loss_calc(pred, labels.squeeze())
 #        loss = loss_calc(pred, labels.squeeze(), args.gpu)
-        loss.backward()
-        optimizer.step()
-        
-        print('iter = ', i_iter, 'of', args.num_steps,'completed, loss = ', loss.data.cpu().numpy())
+                loss.backward()
+                optimizer.step()
+
+                print('iter = ', i_iter, 'of', args.num_steps,'completed, loss = ', loss.data.cpu().numpy())
 
  #       if i_iter >= args.num_steps-1:
- #           print('save model ...')
+     #           print('save model ...')
  #           torch.save(model.state_dict(),osp.join(args.snapshot_dir, 'VOC12_scenes_'+str(args.num_steps)+'.pth'))
 #            break
 
-        if i_iter % 200 == 0 and i_iter!=0:
-            print('taking snapshot ...')
-            torch.save(model.state_dict(),osp.join(args.snapshot_dir, 'VOC12_scenes_'+str(i_iter)+'.pth'))     
+                if i_iter % 200 == 0 and i_iter!=0:
+                    print('taking snapshot ...')
+                    torch.save(model.state_dict(),osp.join(args.snapshot_dir, 'VOC12_scenes_'+str(i_iter)+'.pth'))     
 
     end = timeit.default_timer()
     print(end-start,'seconds')
