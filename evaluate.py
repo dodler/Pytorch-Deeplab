@@ -5,6 +5,9 @@ import cv2
 import numpy as np
 import sys
 
+
+from deeplab.datasets import GenericDataset
+
 import torch
 from torch.autograd import Variable
 import torchvision.models as models
@@ -15,16 +18,34 @@ from deeplab.datasets import VOCDataSet
 from collections import OrderedDict
 import os
 
+import torchvision.transforms as transforms
+from torchvision.transforms import *
+
 import matplotlib.pyplot as plt
 import torch.nn as nn
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-DATA_DIRECTORY = '../../data/VOCdevkit/voc12'
+DATA_DIRECTORY = '/home/dhc/nevus_masks/'
+
+BATCH_SIZE=16
+
 DATA_LIST_PATH = './dataset/list/val.txt'
 IGNORE_LABEL = 255
-NUM_CLASSES = 21
+NUM_CLASSES = 3
 NUM_STEPS = 1449 # Number of images in the validation set.
-RESTORE_FROM = './deeplab_resnet.ckpt'
+#RESTORE_FROM = './deeplab_resnet.ckpt'
+RESTORE_FROM = 'snapshots/VOC12_scenes_400.pth'
+
+rgb_mean = (0.4914, 0.4822, 0.4465)
+rgb_std = (0.2023, 0.1994, 0.2010)
+tsize = 321
+
+test_transform = Compose([
+                           Resize((tsize, tsize)),
+                           ToTensor(),
+                           Normalize(rgb_mean, rgb_std)
+                           ])
+
 
 def get_arguments():
     """Parse all the arguments provided from the CLI.
@@ -114,8 +135,9 @@ def main():
     model.eval()
     model.cuda(gpu0)
 
-    testloader = data.DataLoader(VOCDataSet(args.data_dir, args.data_list, crop_size=(505, 505), mean=IMG_MEAN, scale=False, mirror=False), 
-                                    batch_size=1, shuffle=False, pin_memory=True)
+    dataset = GenericDataset(DATA_DIRECTORY,'val', test_transform)
+    testloader = data.DataLoader(dataset, batch_size = BATCH_SIZE, shuffle=True, num_workers = 4, pin_memory=True)
+
 
     interp = nn.Upsample(size=(505, 505), mode='bilinear')
     data_list = []

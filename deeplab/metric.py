@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 from multiprocessing import Pool 
-import copy_reg
+import copyreg
 import types
 def _pickle_method(m):
     if m.im_self is None:
@@ -10,7 +10,7 @@ def _pickle_method(m):
     else:
         return getattr, (m.im_self, m.im_func.func_name)
 
-copy_reg.pickle(types.MethodType, _pickle_method)
+copyreg.pickle(types.MethodType, _pickle_method)
 
 class ConfusionMatrix(object):
 
@@ -59,6 +59,7 @@ class ConfusionMatrix(object):
     def generateM(self, item):
         gt, pred = item
         m = np.zeros((self.nclass, self.nclass))
+        print(gt, pred)
         assert(len(gt) == len(pred))
         for i in range(len(gt)):
             if gt[i] < self.nclass: #and pred[i] < self.nclass:

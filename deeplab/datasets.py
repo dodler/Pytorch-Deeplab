@@ -2,13 +2,71 @@ import os
 import os.path as osp
 import numpy as np
 import random
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import collections
 import torch
 import torchvision
 import cv2
 from torch.utils import data
 
+from PIL import Image
+
+from torchvision.transforms import *
+import torch.nn as nn
+
+import random
+
+def rotate(img,mask, angle, p):
+    if random.random() > p:
+        a = random.randint(-angle, angle)
+        img.rotate(a)
+        mask.rotate(a)
+        return img, mask
+
+    return img,mask
+
+
+
+'''
+expecting to have such structure
+
+base 
+	train
+		images
+		masks
+	val
+		images
+		masks
+'''
+
+class GenericDataset(data.Dataset):
+    def __init__(self, base_path, mode, img_transforms, mask_transforms):
+        self.img_transforms = img_transforms
+        self.mask_transforms = mask_transforms
+        self.mode = mode
+        self.base_path = base_path
+        self.train_images = os.listdir(osp.join(base_path, 'train','images'))
+        self.train_masks= os.listdir(osp.join(base_path, 'train','masks'))
+        self.val_images = os.listdir(osp.join(base_path, 'val','images'))
+        self.val_masks = os.listdir(osp.join(base_path, 'val','masks'))
+
+    def __len__(self):
+        print(len(self.train_images))
+        if self.mode == 'train':
+            return len(self.train_images)
+
+        return len(self.val_images)
+
+    def __getitem__(self, index):
+        if self.mode == 'train':
+            img = Image.open(osp.join(self.base_path, 'train','images',self.train_images[index]))
+            mask = Image.open(osp.join(self.base_path, 'train','masks',self.train_masks[index])).convert('L')
+            img,mask = rotate(img,mask,120,0.5)
+            return self.img_transforms(img), self.mask_transforms(mask),img.size,self.train_images[index]
+
+        img = Image.open(osp.join(self.base_path,'val','images',self.val_images[index]))
+        mask = Image.open(osp.join(self.base_path,'val','masks',self.val_masks[index])).convert('L')
+        return self.img_transforms(img),self.mask_transforms(mask),img.size, self.val_images[index]
 
 class VOCDataSet(data.Dataset):
     def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), scale=True, mirror=True, ignore_label=255):
@@ -22,7 +80,7 @@ class VOCDataSet(data.Dataset):
         # self.mean_bgr = np.array([104.00698793, 116.66876762, 122.67891434])
         self.img_ids = [i_id.strip() for i_id in open(list_path)]
         if not max_iters==None:
-	    self.img_ids = self.img_ids * int(np.ceil(float(max_iters) / len(self.img_ids)))
+            self.img_ids = self.img_ids * int(np.ceil(float(max_iters) / len(self.img_ids)))
         self.files = []
         # for split in ["train", "trainval", "val"]:
         for name in self.img_ids:
@@ -129,5 +187,5 @@ if __name__ == '__main__':
             img = torchvision.utils.make_grid(imgs).numpy()
             img = np.transpose(img, (1, 2, 0))
             img = img[:, :, ::-1]
-            plt.imshow(img)
-            plt.show()
+            #plt.imshow(img)
+            #plt.show()
